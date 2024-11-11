@@ -144,40 +144,56 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Generate pain points
+        // Generate pain points first
         painPointSuggestions.innerHTML = '<div class="suggestion loading">Sedang menjana masalah pelanggan...</div>';
         painPointSuggestions.style.display = 'block';
 
-        // Generate benefits
-        benefitSuggestions.innerHTML = '<div class="suggestion loading">Sedang menjana faedah produk...</div>';
-        benefitSuggestions.style.display = 'block';
-
         try {
-            // Generate both pain points and benefits concurrently
-            const [painPoints, benefits] = await Promise.all([
-                generatePainPoints(),
-                generateBenefits()
-            ]);
+            // Generate pain points
+            const painPoints = await generatePainPoints();
             
             if (painPoints && Array.isArray(painPoints)) {
                 painPointSuggestions.innerHTML = painPoints
                     .map(point => `<div class="suggestion">${point}</div>`)
                     .join('');
+                
+                // After pain point is selected, then generate benefits
+                painPointSuggestions.addEventListener('click', async function painPointClickHandler(e) {
+                    if (e.target.classList.contains('suggestion') && 
+                        !e.target.classList.contains('loading') && 
+                        !e.target.classList.contains('error')) {
+                        
+                        // Remove this event listener after selection
+                        painPointSuggestions.removeEventListener('click', painPointClickHandler);
+                        
+                        // Start generating benefits after pain point selection
+                        benefitSuggestions.innerHTML = '<div class="suggestion loading">Sedang menjana faedah produk berdasarkan masalah yang dipilih...</div>';
+                        benefitSuggestions.style.display = 'block';
+
+                        try {
+                            const selectedPainPoint = e.target.textContent;
+                            elements.painPointInput.value = selectedPainPoint;
+                            painPointSuggestions.style.display = 'none';
+
+                            const benefits = await generateBenefits(selectedPainPoint);
+                            
+                            if (benefits && Array.isArray(benefits)) {
+                                benefitSuggestions.innerHTML = benefits
+                                    .map(benefit => `<div class="suggestion">${benefit}</div>`)
+                                    .join('');
+                            } else {
+                                benefitSuggestions.innerHTML = '<div class="suggestion error">Gagal menjana faedah produk. Sila cuba lagi.</div>';
+                            }
+                        } catch (error) {
+                            benefitSuggestions.innerHTML = `<div class="suggestion error">Ralat: ${error.message}</div>`;
+                        }
+                    }
+                });
             } else {
                 painPointSuggestions.innerHTML = '<div class="suggestion error">Gagal menjana masalah pelanggan. Sila cuba lagi.</div>';
             }
-
-            if (benefits && Array.isArray(benefits)) {
-                benefitSuggestions.innerHTML = benefits
-                    .map(benefit => `<div class="suggestion">${benefit}</div>`)
-                    .join('');
-            } else {
-                benefitSuggestions.innerHTML = '<div class="suggestion error">Gagal menjana faedah produk. Sila cuba lagi.</div>';
-            }
         } catch (error) {
-            const errorMessage = `<div class="suggestion error">Ralat: ${error.message}</div>`;
-            painPointSuggestions.innerHTML = errorMessage;
-            benefitSuggestions.innerHTML = errorMessage;
+            painPointSuggestions.innerHTML = `<div class="suggestion error">Ralat: ${error.message}</div>`;
         }
     }
 
@@ -249,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function generateBenefits() {
+    async function generateBenefits(selectedPainPoint) {
         const provider = elements.apiProvider.value;
         const config = apiConfig[provider];
         
@@ -264,10 +280,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         content: "Anda adalah pakar pemasaran yang membantu mengenal pasti faedah produk dan perkhidmatan yang menyelesaikan masalah pelanggan dalam konteks Malaysia."
                     }, {
                         role: "user",
-                        content: `Senaraikan 5 faedah utama yang menyelesaikan masalah pelanggan untuk produk/perkhidmatan ini: ${elements.productInput.value}. 
+                        content: `Senaraikan 5 faedah utama yang menyelesaikan masalah pelanggan ini: "${selectedPainPoint}" untuk produk/perkhidmatan: ${elements.productInput.value}. 
                                  Berikan respons dalam format JSON array yang mengandungi string sahaja.
                                  Pastikan faedah yang disenaraikan:
-                                 1. Menyelesaikan masalah pelanggan secara langsung
+                                 1. Menyelesaikan masalah pelanggan yang dinyatakan secara langsung
                                  2. Memberikan nilai yang jelas
                                  3. Mudah difahami
                                  4. Relevan dengan pasaran Malaysia
