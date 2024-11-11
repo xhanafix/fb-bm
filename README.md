@@ -8,6 +8,7 @@ Aplikasi web yang berkuasa untuk menjana salinan iklan Facebook yang menarik men
   - OpenAI (GPT-3.5-turbo)
   - Groq (Mixtral-8x7b)
   - OpenRouter (Pelbagai model)
+  - Zuki Journey (GPT-3.5-turbo)
 - Jana masalah pelanggan secara automatik berdasarkan produk/perkhidmatan
 - Animasi pemuatan interaktif dengan kesan pensel
 - 10 formula penulisan yang terbukti
@@ -23,6 +24,7 @@ Aplikasi web yang berkuasa untuk menjana salinan iklan Facebook yang menarik men
    - OpenAI: Dapatkan kunci API dari [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
    - Groq: Dapatkan kunci API dari [console.groq.com/keys](https://console.groq.com/keys)
    - OpenRouter: Dapatkan kunci API dari [openrouter.ai/keys](https://openrouter.ai/keys)
+   - Zuki Journey: Dapatkan kunci API dari [zukijourney.com](https://zukijourney.com)
 
 3. Masukkan kunci API anda
 4. Isikan butiran produk/perkhidmatan anda

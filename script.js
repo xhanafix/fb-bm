@@ -41,7 +41,13 @@ document.addEventListener('DOMContentLoaded', () => {
         apiProvider: document.getElementById('apiProvider'),
         apiKey: document.getElementById('apiKey'),
         formula: document.getElementById('formula'),
-        tone: document.getElementById('tone')
+        tone: document.getElementById('tone'),
+        hints: {
+            openai: document.getElementById('openaiHint'),
+            groq: document.getElementById('groqHint'),
+            openrouter: document.getElementById('openrouterHint'),
+            zuki: document.getElementById('zukiHint')
+        }
     };
 
     // Create pain point suggestions container
@@ -81,6 +87,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 'X-Title': 'FB Ads Copy Generator'
             }),
             model: 'mistralai/mixtral-8x7b-instruct'
+        },
+        zuki: {
+            url: 'https://api.zukijourney.com/v1/chat/completions',
+            headers: apiKey => ({
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            }),
+            model: 'gpt-3.5-turbo'
         }
     };
 
