@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingDiv: document.getElementById('loading'),
         productInput: document.getElementById('product'),
         painPointInput: document.getElementById('painPoint'),
+        benefitInput: document.getElementById('benefit'),
         apiProvider: document.getElementById('apiProvider'),
         apiKey: document.getElementById('apiKey'),
         formula: document.getElementById('formula'),
@@ -47,6 +48,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const painPointSuggestions = document.createElement('div');
     painPointSuggestions.className = 'pain-point-suggestions';
     elements.painPointInput.parentNode.appendChild(painPointSuggestions);
+
+    // Create benefit suggestions container
+    const benefitSuggestions = document.createElement('div');
+    benefitSuggestions.className = 'pain-point-suggestions';
+    elements.benefitInput.parentNode.appendChild(benefitSuggestions);
 
     // API Configuration
     const apiConfig = {
@@ -98,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.copyBtn.addEventListener('click', copyToClipboard);
     elements.productInput.addEventListener('input', debounce(handleProductInput, 1000));
     painPointSuggestions.addEventListener('click', handleSuggestionClick);
+    benefitSuggestions.addEventListener('click', handleBenefitSuggestionClick);
     document.addEventListener('click', handleClickOutside);
 
     // Functions
@@ -124,20 +131,33 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleProductInput() {
         if (!elements.productInput.value) {
             painPointSuggestions.style.display = 'none';
+            benefitSuggestions.style.display = 'none';
             return;
         }
 
         if (!elements.apiKey.value) {
-            painPointSuggestions.innerHTML = '<div class="suggestion error">Sila masukkan kunci API terlebih dahulu</div>';
+            const errorMessage = '<div class="suggestion error">Sila masukkan kunci API terlebih dahulu</div>';
+            painPointSuggestions.innerHTML = errorMessage;
+            benefitSuggestions.innerHTML = errorMessage;
             painPointSuggestions.style.display = 'block';
+            benefitSuggestions.style.display = 'block';
             return;
         }
 
+        // Generate pain points
         painPointSuggestions.innerHTML = '<div class="suggestion loading">Sedang menjana masalah pelanggan...</div>';
         painPointSuggestions.style.display = 'block';
 
+        // Generate benefits
+        benefitSuggestions.innerHTML = '<div class="suggestion loading">Sedang menjana faedah produk...</div>';
+        benefitSuggestions.style.display = 'block';
+
         try {
-            const painPoints = await generatePainPoints();
+            // Generate both pain points and benefits concurrently
+            const [painPoints, benefits] = await Promise.all([
+                generatePainPoints(),
+                generateBenefits()
+            ]);
             
             if (painPoints && Array.isArray(painPoints)) {
                 painPointSuggestions.innerHTML = painPoints
@@ -146,8 +166,18 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 painPointSuggestions.innerHTML = '<div class="suggestion error">Gagal menjana masalah pelanggan. Sila cuba lagi.</div>';
             }
+
+            if (benefits && Array.isArray(benefits)) {
+                benefitSuggestions.innerHTML = benefits
+                    .map(benefit => `<div class="suggestion">${benefit}</div>`)
+                    .join('');
+            } else {
+                benefitSuggestions.innerHTML = '<div class="suggestion error">Gagal menjana faedah produk. Sila cuba lagi.</div>';
+            }
         } catch (error) {
-            painPointSuggestions.innerHTML = '<div class="suggestion error">Ralat: ${error.message}</div>';
+            const errorMessage = `<div class="suggestion error">Ralat: ${error.message}</div>`;
+            painPointSuggestions.innerHTML = errorMessage;
+            benefitSuggestions.innerHTML = errorMessage;
         }
     }
 
@@ -160,9 +190,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function handleBenefitSuggestionClick(e) {
+        if (e.target.classList.contains('suggestion') && 
+            !e.target.classList.contains('loading') && 
+            !e.target.classList.contains('error')) {
+            elements.benefitInput.value = e.target.textContent;
+            benefitSuggestions.style.display = 'none';
+        }
+    }
+
     function handleClickOutside(e) {
         if (!painPointSuggestions.contains(e.target) && e.target !== elements.painPointInput) {
             painPointSuggestions.style.display = 'none';
+        }
+        if (!benefitSuggestions.contains(e.target) && e.target !== elements.benefitInput) {
+            benefitSuggestions.style.display = 'none';
         }
     }
 
@@ -203,6 +245,53 @@ document.addEventListener('DOMContentLoaded', () => {
             return parsedContent;
         } catch (error) {
             console.error('Ralat menjana masalah:', error);
+            throw error;
+        }
+    }
+
+    async function generateBenefits() {
+        const provider = elements.apiProvider.value;
+        const config = apiConfig[provider];
+        
+        try {
+            const response = await fetch(config.url, {
+                method: 'POST',
+                headers: config.headers(elements.apiKey.value),
+                body: JSON.stringify({
+                    model: config.model,
+                    messages: [{
+                        role: "system",
+                        content: "Anda adalah pakar pemasaran yang membantu mengenal pasti faedah produk dan perkhidmatan yang menyelesaikan masalah pelanggan dalam konteks Malaysia."
+                    }, {
+                        role: "user",
+                        content: `Senaraikan 5 faedah utama yang menyelesaikan masalah pelanggan untuk produk/perkhidmatan ini: ${elements.productInput.value}. 
+                                 Berikan respons dalam format JSON array yang mengandungi string sahaja.
+                                 Pastikan faedah yang disenaraikan:
+                                 1. Menyelesaikan masalah pelanggan secara langsung
+                                 2. Memberikan nilai yang jelas
+                                 3. Mudah difahami
+                                 4. Relevan dengan pasaran Malaysia
+                                 5. Meyakinkan dan berorientasikan hasil
+                                 
+                                 Contoh format: ["faedah 1", "faedah 2", "faedah 3", "faedah 4", "faedah 5"]`
+                    }],
+                    temperature: 0.7
+                })
+            });
+
+            const data = await response.json();
+            if (data.error) throw new Error(data.error.message);
+
+            const content = data.choices[0].message.content;
+            const parsedContent = JSON.parse(content.trim());
+            
+            if (!Array.isArray(parsedContent)) {
+                throw new Error('Format respons tidak sah');
+            }
+
+            return parsedContent;
+        } catch (error) {
+            console.error('Ralat menjana faedah:', error);
             throw error;
         }
     }
@@ -250,7 +339,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function validateInputs() {
-        if (!elements.apiKey.value || !elements.productInput.value || !elements.painPointInput.value) {
+        if (!elements.apiKey.value || 
+            !elements.productInput.value || 
+            !elements.painPointInput.value ||
+            !elements.benefitInput.value) {
             alert('Sila isi semua medan yang diperlukan');
             return false;
         }
@@ -265,6 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function getUserPrompt() {
         return `Tuliskan iklan Facebook untuk produk/perkhidmatan ini: ${elements.productInput.value}. 
                 Masalah pelanggan sasaran: ${elements.painPointInput.value}
+                Faedah produk: ${elements.benefitInput.value}
                 ${formulaContexts[elements.formula.value]}
                 Nada suara: ${elements.tone.value}
                 
@@ -273,7 +366,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 2. Sesuai dengan konteks tempatan Malaysia
                 3. Mengikut formula yang dipilih dengan tepat
                 4. Menggunakan nada suara yang sesuai
-                5. Mempunyai seruan untuk bertindak (call-to-action) yang jelas`;
+                5. Menghubungkan masalah dengan faedah secara jelas
+                6. Mempunyai seruan untuk bertindak (call-to-action) yang jelas`;
     }
 
     function copyToClipboard() {
