@@ -40,13 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         apiProvider: document.getElementById('apiProvider'),
         apiKey: document.getElementById('apiKey'),
         formula: document.getElementById('formula'),
-        tone: document.getElementById('tone'),
-        language: document.getElementById('language'),
-        hints: {
-            openai: document.getElementById('openaiHint'),
-            groq: document.getElementById('groqHint'),
-            openrouter: document.getElementById('openrouterHint')
-        }
+        tone: document.getElementById('tone')
     };
 
     // Create pain point suggestions container
@@ -84,22 +78,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Copywriting formulas
+    // Copywriting formulas in Malay
     const formulaContexts = {
-        'AIDA': 'Use the AIDA formula: First grab Attention, build Interest, create Desire, then call to Action',
-        'PAS': 'Use the PAS formula: Identify the Problem, Agitate the pain points, present the Solution',
-        'BAB': 'Use the BAB formula: Show the Before state, paint the After picture, provide the Bridge to get there',
-        'FAB': 'Use the FAB formula: List the Features, explain the Advantages, emphasize the Benefits',
-        '4Ps': 'Use the 4Ps formula: Make a Promise, Paint the Picture, Provide Proof, Push for action',
-        'PASTOR': 'Use the PASTOR formula: Present the Problem, Amplify consequences, Share a Story, Show the Transformation, Make an Offer, Ask for Response',
-        'QUEST': 'Use the QUEST formula: Qualify the audience, help them Understand the problem, Educate about solution, Stimulate interest, Transition to action',
-        '4Cs': 'Use the 4Cs formula: Be Clear in message, Concise in delivery, Compelling in reasoning, Credible in proof',
-        'PPPP': 'Use the PPPP formula: Paint the Picture of the problem, Make a Promise, Prove your claims, Push for action',
-        'SSS': 'Use the SSS formula: Start with a Star (attention grabber), Tell a Story, Present the Solution',
-        'ACCA': 'Use the ACCA formula: Build Awareness, ensure Comprehension, create Conviction, prompt Action',
-        '6+1': 'Use the 6+1 formula: Answer Who, What, When, Where, Why, How + Address Money/Value aspect',
-        'SLAP': 'Use the SLAP formula: Make them Stop scrolling, Look at the offer, Act on interest, Purchase the product',
-        '1-2-3-4': 'Use the 1-2-3-4 formula: Present 1 Problem, Make 2 Promises, 3 Proofs, 4 Action Steps'
+        'AIDA': 'Gunakan formula AIDA: Mula dengan menarik Perhatian, bangkitkan Minat, timbulkan Keinginan, dan akhiri dengan Tindakan',
+        'PAS': 'Gunakan formula PAS: Kenalpasti Masalah, timbulkan Kesusahan, dan tawarkan Penyelesaian',
+        'BAB': 'Gunakan formula BAB: Tunjukkan keadaan Sebelum, gambarkan keadaan Selepas, dan sediakan Jambatan untuk sampai ke sana',
+        'FAB': 'Gunakan formula FAB: Senaraikan Ciri-ciri, terangkan Kelebihan, dan tekankan Faedah',
+        '4Ps': 'Gunakan formula 4P: Buat Janji, Gambarkan situasi, Berikan Bukti, dan buat Desakan',
+        'PASTOR': 'Gunakan formula PASTOR: Tunjukkan Masalah, Amplifikasi kesan, Kongsi Cerita, Tunjuk Transformasi, Buat Tawaran, minta Tindak Balas',
+        'QUEST': 'Gunakan formula QUEST: Kelayakan audiens, bantu Pemahaman masalah, beri Pendidikan tentang penyelesaian, Rangsang minat, buat Peralihan ke tindakan',
+        '4Cs': 'Gunakan formula 4C: Pastikan mesej Jelas, Ringkas, Menarik, dan Dipercayai',
+        'PPPP': 'Gunakan formula PPPP: Gambarkan masalah, buat Janji, berikan Bukti, dan buat Desakan',
+        'SSS': 'Gunakan formula SSS: Mula dengan Bintang (penarik perhatian), Ceritakan kisah, Tunjukkan Penyelesaian'
     };
 
     // Event Listeners
@@ -184,12 +174,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     model: config.model,
                     messages: [{
                         role: "system",
-                        content: "You are a marketing expert who helps identify critical customer pain points."
+                        content: "Anda adalah pakar pemasaran yang membantu mengenal pasti masalah kritikal pelanggan dalam konteks Malaysia."
                     }, {
                         role: "user",
-                        content: `List 5 critical pain points that customers might face when considering this product/service: ${elements.productInput.value}. 
-                                 Format the response as a JSON array of strings, with each pain point being specific, emotional, and compelling.
-                                 Example format: ["pain point 1", "pain point 2", "pain point 3", "pain point 4", "pain point 5"]`
+                        content: `Senaraikan 5 masalah kritikal yang mungkin dihadapi pelanggan apabila mempertimbangkan produk/perkhidmatan ini: ${elements.productInput.value}. 
+                                 Format jawapan sebagai tatasusunan JSON, dengan setiap masalah yang spesifik, emosi, dan menarik.
+                                 Contoh format: ["masalah 1", "masalah 2", "masalah 3", "masalah 4", "masalah 5"]`
                     }],
                     temperature: 0.7
                 })
@@ -199,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.error) throw new Error(data.error.message);
             return JSON.parse(data.choices[0].message.content);
         } catch (error) {
-            console.error('Error generating pain points:', error);
+            console.error('Ralat menjana masalah:', error);
             return null;
         }
     }
@@ -255,21 +245,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getSystemPrompt() {
-        return elements.language.value === 'ms' ? 
-            `Anda adalah pakar pengiklanan dari Malaysia yang mahir dalam penulisan iklan Facebook dalam Bahasa Malaysia.
-             [... rest of Malaysian system prompt ...]` : 
-            `You are a professional copywriter who writes compelling Facebook ads.`;
+        return `Anda adalah pakar pengiklanan dari Malaysia yang mahir dalam penulisan iklan Facebook dalam Bahasa Malaysia. 
+                Anda perlu menulis iklan yang menarik, meyakinkan dan sesuai dengan konteks tempatan.`;
     }
 
     function getUserPrompt() {
-        return elements.language.value === 'ms' ?
-            `Tuliskan iklan Facebook untuk produk/perkhidmatan ini: ${elements.productInput.value}. 
-             [... rest of Malaysian user prompt ...]` :
-            `Write a Facebook ad copy for this product/service: ${elements.productInput.value}. 
-             Target audience pain point: ${elements.painPointInput.value}
-             ${formulaContexts[elements.formula.value]}
-             Tone of voice: ${elements.tone.value}
-             [... rest of English prompt ...]`;
+        return `Tuliskan iklan Facebook untuk produk/perkhidmatan ini: ${elements.productInput.value}. 
+                Masalah pelanggan sasaran: ${elements.painPointInput.value}
+                ${formulaContexts[elements.formula.value]}
+                Nada suara: ${elements.tone.value}
+                
+                Pastikan iklan:
+                1. Menggunakan Bahasa Malaysia yang standard dan sesuai
+                2. Sesuai dengan konteks tempatan Malaysia
+                3. Mengikut formula yang dipilih dengan tepat
+                4. Menggunakan nada suara yang sesuai
+                5. Mempunyai seruan untuk bertindak (call-to-action) yang jelas`;
     }
 
     function copyToClipboard() {
