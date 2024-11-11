@@ -128,22 +128,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (!elements.apiKey.value) {
-            painPointSuggestions.innerHTML = '<div class="suggestion error">Please enter an API key first</div>';
+            painPointSuggestions.innerHTML = '<div class="suggestion error">Sila masukkan kunci API terlebih dahulu</div>';
             painPointSuggestions.style.display = 'block';
             return;
         }
 
-        painPointSuggestions.innerHTML = '<div class="suggestion loading">Generating pain points...</div>';
+        painPointSuggestions.innerHTML = '<div class="suggestion loading">Sedang menjana masalah pelanggan...</div>';
         painPointSuggestions.style.display = 'block';
 
-        const painPoints = await generatePainPoints();
-        
-        if (painPoints && painPoints.length > 0) {
-            painPointSuggestions.innerHTML = painPoints
-                .map(point => `<div class="suggestion">${point}</div>`)
-                .join('');
-        } else {
-            painPointSuggestions.innerHTML = '<div class="suggestion error">Failed to generate pain points. Please try again.</div>';
+        try {
+            const painPoints = await generatePainPoints();
+            
+            if (painPoints && Array.isArray(painPoints)) {
+                painPointSuggestions.innerHTML = painPoints
+                    .map(point => `<div class="suggestion">${point}</div>`)
+                    .join('');
+            } else {
+                painPointSuggestions.innerHTML = '<div class="suggestion error">Gagal menjana masalah pelanggan. Sila cuba lagi.</div>';
+            }
+        } catch (error) {
+            painPointSuggestions.innerHTML = '<div class="suggestion error">Ralat: ${error.message}</div>';
         }
     }
 
@@ -178,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, {
                         role: "user",
                         content: `Senaraikan 5 masalah kritikal yang mungkin dihadapi pelanggan apabila mempertimbangkan produk/perkhidmatan ini: ${elements.productInput.value}. 
-                                 Format jawapan sebagai tatasusunan JSON, dengan setiap masalah yang spesifik, emosi, dan menarik.
+                                 Berikan respons dalam format JSON array yang mengandungi string sahaja.
                                  Contoh format: ["masalah 1", "masalah 2", "masalah 3", "masalah 4", "masalah 5"]`
                     }],
                     temperature: 0.7
@@ -187,10 +191,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             if (data.error) throw new Error(data.error.message);
-            return JSON.parse(data.choices[0].message.content);
+
+            const content = data.choices[0].message.content;
+            // Ensure we're parsing a JSON array
+            const parsedContent = JSON.parse(content.trim());
+            
+            if (!Array.isArray(parsedContent)) {
+                throw new Error('Format respons tidak sah');
+            }
+
+            return parsedContent;
         } catch (error) {
             console.error('Ralat menjana masalah:', error);
-            return null;
+            throw error;
         }
     }
 
@@ -238,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function validateInputs() {
         if (!elements.apiKey.value || !elements.productInput.value || !elements.painPointInput.value) {
-            alert('Please fill in all required fields');
+            alert('Sila isi semua medan yang diperlukan');
             return false;
         }
         return true;
@@ -266,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function copyToClipboard() {
         navigator.clipboard.writeText(elements.resultDiv.innerText).then(() => {
             const originalText = elements.copyBtn.innerText;
-            elements.copyBtn.innerText = 'Copied!';
+            elements.copyBtn.innerText = 'Disalin!';
             elements.copyBtn.classList.add('success');
             setTimeout(() => {
                 elements.copyBtn.innerText = originalText;
